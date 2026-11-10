@@ -79,6 +79,7 @@ oven before releasing a recipe. The resin's activation energy should be confirme
 Sister projects: [alternator-transient-performance](https://github.com/chad416/alternator-transient-performance)
 (the same 800 kVA machine: FEMM, dynamics, ISO 8528-5) and
 [alternator-routine-test-station](https://github.com/chad416/alternator-routine-test-station) (the test bench that
-measures IR/PI after the cure).
+measures IR/PI after the cure) and [rotor-bearing-mounting-cell](https://github.com/chad416/rotor-bearing-mounting-cell)
+(the robot cell that mounts the rotor bearings).
 
 MIT licence.
