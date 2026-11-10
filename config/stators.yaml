@@ -1,0 +1,53 @@
+# Wound-stator family of a study LV alternator line. Every value is a study design choice [A] unless tagged.
+# "M" is the 800 kVA stator of the sister study alternator-transient-performance (config/machine.yaml there):
+# bore, outer diameter, core length, slots, slot size, fill, conductors per slot, paths and end-turn length are
+# copied from it [D]. "S" and "L" are scaled neighbours so that a fixed oven recipe has a family to cover.
+#
+#   d_bore, d_out, l_core   m      laminated core (no frame: the wound core is impregnated before framing)
+#   slots, slot_w, slot_d   -, m   parallel-sided slots
+#   fill                    -      copper fill of the slot area
+#   cond_per_slot           -      conductors (turn sides) per slot
+#   paths                   -      parallel paths per phase
+#   l_end_turn              m      conductor length of one end connection (one end)
+#   l_ew_axial              m      axial overhang of the end winding beyond the core (one end)
+#   r_ew_out_extra          m      radial build of the end winding outside the slot-bottom radius
+stators:
+  S:
+    rating_kva: 250
+    d_bore: 0.360
+    d_out: 0.560
+    l_core: 0.300
+    slots: 48
+    slot_w: 0.010
+    slot_d: 0.040
+    fill: 0.45
+    cond_per_slot: 8
+    paths: 2
+    l_end_turn: 0.26
+    l_ew_axial: 0.080
+  M:
+    rating_kva: 800
+    d_bore: 0.540
+    d_out: 0.820
+    l_core: 0.430
+    slots: 48
+    slot_w: 0.014
+    slot_d: 0.058
+    fill: 0.45
+    cond_per_slot: 6
+    paths: 4
+    l_end_turn: 0.42
+    l_ew_axial: 0.120
+  L:
+    rating_kva: 2000
+    d_bore: 0.760
+    d_out: 1.100
+    l_core: 0.650
+    slots: 72
+    slot_w: 0.016
+    slot_d: 0.080
+    fill: 0.45
+    cond_per_slot: 4
+    paths: 4
+    l_end_turn: 0.62
+    l_ew_axial: 0.160

@@ -1,0 +1,76 @@
+# Process, material and plant data. Tags: [S] sourced (reference key in DOSSIER.md §13), [D] derived in this study,
+# [A] assumed (varied in DOSSIER §8.4 where it can change a conclusion).
+
+resin:
+  # One-component, styrene-free unsaturated polyesterimide impregnating resin, public technical data sheet [R1].
+  density: 1120.0            # kg/m3 liquid, [R1] Table 1: 1.05-1.19 g/cm3 (midpoint) [S]
+  cp: 1500.0                 # J/kg K [A]
+  k: 0.22                    # W/m K, [R1] Table 3: 0.21-0.23 [S]
+  gel_time_100c_min: 10.0    # [R1] Table 1: gel time at 100 C 7.0-13.0 min (midpoint) [S]
+  gel_time_range_min: [7.0, 13.0]
+  # Dip & bake cure schedules, counted from the time the part reaches the temperature [R1] Table 3 [S]:
+  cure_schedules_h: [[130.0, 2.0], [150.0, 1.0]]
+  trickle_schedules_min: [[130.0, 15.0, 30.0], [150.0, 10.0, 15.0]]
+  max_cooling_rate_k_per_min: 5.0   # [R1] p.2 "Curing": active cooling at most 5 K/min [S]
+  emission_pct: 1.2                 # [R1] Table 3, IEC 60455-3-5 [S]
+  # Nominal viscosity vs temperature, [R1] Annex 1 [S] (C, mPa s)
+  viscosity_points: [[10, 9900], [20, 3600], [25, 2200], [30, 1500], [40, 700], [50, 400], [60, 240], [70, 150], [80, 100]]
+  # Volume resistivity of the cured resin, [R1] Table 2 (C, log10 ohm cm, low and high) [S]
+  resistivity_points: [[155, 10, 12], [180, 9, 11], [200, 9, 11]]
+
+materials:
+  steel:   {rho: 7650.0, cp: 460.0, k_in_plane: 28.0, k_through_stack: 1.0}   # [A] (non-oriented Si steel; stack k varied 0.5-3)
+  copper:  {rho: 8900.0, cp: 385.0, k: 398.0, rho_e20: 1.72e-8, alpha20: 0.00393}  # k, cp, rho [A] handbook; rho_e20, alpha20 IEC 60028 [S] (same as sister study)
+  insulation: {rho: 1300.0, cp: 1300.0}     # slot liner + enamel + resin, lumped [A]
+  winding_k_transverse: 0.7                  # W/m K impregnated bundle across the conductors [A] (varied 0.3-1.5)
+  liner: {thickness: 0.0003, k: 0.15}        # slot liner [A]
+  copper_temp_constant: 235.0                # IEC 60034-1 resistance-temperature relation for copper [S]
+
+oven:
+  h_conv: 25.0               # W/m2 K, forced-convection oven, all object surfaces [A] (varied 10-50; generic range [S7])
+  h_cooling_buffer: 8.0      # W/m2 K, still air after unloading [A]
+  bore_wedge_factor: 0.3     # share of the slot-mouth area that exchanges heat at the bore (wedges) [A]
+  ew_surface_factor: 2.0     # wetted end-winding area / envelope area (gaps between coils) [A]
+  c_air: 250000.0            # J/K, oven air + internal steelwork [A]
+  ua_wall: 40.0              # W/K, oven wall loss [A]
+  p_heater_max: 60000.0      # W [A]
+  tau_air: 120.0             # s, inner air-temperature loop [A]
+  t_ambient: 25.0
+  t_air_max: 200.0           # over-temperature trip of the oven [A]
+  load_unload_min: 10.0      # door open, load, close [A]
+
+dc_heating:
+  i_max: 2000.0              # A, DC supply limit [A]
+  v_max: 24.0                # V [A]
+  t_cu_set: 160.0            # C, set point of max(mean copper, end-winding probe) while heating [A]
+  probe_off_band: 5.0        # K, DC heating stops when the slot probe is this close to the cure temperature [A]
+
+probes:
+  tau: 30.0                  # s, thermocouple lag [A]
+  plausibility_band: 25.0    # K, probe vs controller observer [A]
+
+limits:
+  t_ref: 150.0               # C, the reference cure temperature of the 1 h schedule [S R1]
+  teq_target_min: 60.0       # min at 150 C (SR-01) [S R1]
+  t_max_object: 180.0        # C, IEC 60085 thermal class H (180) as the processing ceiling [S]/[A]
+  retention_min_um: 15.0     # um, minimum retained resin film on the end winding (SR-03) [A]
+  drip_min: 10.0             # min, drip over the tank at 25 C after dipping [A]
+  drain_height_m: 0.10       # m, drainage height on the end winding [A]
+
+alternatives:
+  # Six process/control concepts scored in DOSSIER §8. All use the same oven.
+  C0: {name: "Fixed recipe (air set point, fixed time)", mode: 0, t_air: 160.0}
+  C1: {name: "Probe soak timer", mode: 1, t_air: 160.0, soak_min: 60.0, soak_band: 5.0}
+  C2: {name: "Cure-index end point (probe)", mode: 2, t_air: 160.0, margin: 1.10}
+  C3: {name: "Cure index + air boost", mode: 4, t_air: 160.0, t_air_boost: 190.0, boost_end: 135.0, margin: 1.10}
+  C4: {name: "Cure index + winding DC heating", mode: 3, t_air: 160.0, margin: 1.10}
+  C5: {name: "Cure index + DC heating, 150 C air", mode: 3, t_air: 150.0, margin: 1.10}
+
+demand:
+  # Daily stator demand by size today [A]; the study asks for 1x, 2x and 3x of it.
+  today_per_day: {S: 8, M: 6, L: 4}
+  multipliers: [1, 2, 3]
+  oven_hours_per_day: 22.0   # 3 shifts minus maintenance [A]
+  oven_availability: 0.90    # [A]
+  max_positions_3x: 12       # SR-05: today's 6 single-stator positions plus one more line of 6 [A]
+  energy_price_eur_kwh: 0.15 # [A]

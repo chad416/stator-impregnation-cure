@@ -1,0 +1,66 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # matiec (IEC 61131-3 compiler of the Beremiz / OpenPLC projects), pinned
+  MATIEC_REPO: https://github.com/beremiz/matiec.git
+  MATIEC_REF: c316fe57e335381cbe91f61c7366857198580ac7
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Cache matiec
+        id: matiec
+        uses: actions/cache@v4
+        with:
+          path: ~/matiec
+          key: matiec-${{ env.MATIEC_REF }}
+      - name: Build matiec
+        if: steps.matiec.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get install -y -qq bison flex autoconf automake libtool
+          git clone -q "$MATIEC_REPO" ~/matiec
+          cd ~/matiec && git checkout -q "$MATIEC_REF"
+          autoreconf -i && ./configure && make -j4
+      - name: Compile the ST controller (matiec -> C -> shared library)
+        run: PYTHON=python bash scripts/build_plc.sh
+      - name: Model and controller tests
+        run: python -m pytest -q
+      - name: SCL export is up to date with the ST source
+        run: |
+          python plc/st_to_scl.py plc/st/oven_cure.st /tmp/OvenCure.scl
+          diff <(tr -d '\r' < /tmp/OvenCure.scl) <(tr -d '\r' < plc/scl/OvenCure.scl)
+      - name: Closed-loop trade study (quick) and checks on its output
+        run: |
+          python -m scripts.run_studies --quick
+          python - <<'PY'
+          import json
+          d = json.load(open("results/studies_quick.json"))
+          a = d["aoa"]
+          assert set(a) == {"C0", "C1", "C2", "C3", "C4", "C5"}
+          for alt, per in a.items():
+              for s, r in per.items():
+                  # SR-01 everywhere, and the coldest resin is always the slot probe position (DR-01)
+                  assert r["nominal"]["teq_min_cold"] >= 60.0 and r["h_worst"]["teq_min_cold"] >= 60.0, (alt, s)
+                  assert r["nominal"]["cold_node_is_probe"], (alt, s)
+                  assert r["nominal"]["t_max_object"] <= 180.0, (alt, s)
+          cap = d["capacity"]
+          # the end-point controller must beat the fixed recipe on oven capacity; DC heating must beat oven-only C2
+          assert cap["C2"]["3"]["positions"] < cap["C0"]["3"]["positions"]
+          assert cap["C4"]["3"]["positions"] < cap["C2"]["3"]["positions"]
+          print("closed-loop checks passed; fixed recipe", d["fixed_recipe"]["fixed_min"], "min")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: results/studies_quick.json
